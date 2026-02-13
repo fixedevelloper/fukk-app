@@ -1,0 +1,93 @@
+<?php
+
+use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Admin\AdminHookController;
+use App\Http\Controllers\Admin\SliderController;
+use App\Http\Controllers\Admin\BannerController;
+use App\Http\Controllers\Admin\BrandController;
+use App\Http\Controllers\Admin\ProductController;
+use App\Http\Controllers\Admin\VendorOrderController;
+use App\Http\Controllers\Admin\VendorDashboardController;
+use App\Http\Controllers\Admin\StoreController;
+
+/*
+|--------------------------------------------------------------------------
+| ADMIN ROUTES (PROTECTED)
+|--------------------------------------------------------------------------
+*/
+
+Route::middleware('auth:sanctum')
+   // ->prefix('admin')
+    ->group(function () {
+
+        /*
+        |--------------------------------------------------------------------------
+        | Dashboard
+        |--------------------------------------------------------------------------
+        */
+        Route::get('/vendors/dashboard', [VendorDashboardController::class, 'index']);
+
+        /*
+        |--------------------------------------------------------------------------
+        | Sliders
+        |--------------------------------------------------------------------------
+        */
+        Route::apiResource('sliders', SliderController::class);
+        Route::patch('/sliders/{slider}/toggle', [SliderController::class, 'toggle']);
+
+        /*
+        |--------------------------------------------------------------------------
+        | Banners
+        |--------------------------------------------------------------------------
+        */
+        Route::apiResource('banners', BannerController::class);
+        Route::patch('banners/{banner}/toggle-active', [BannerController::class, 'toggleActive']);
+
+        /*
+        |--------------------------------------------------------------------------
+        | Brands
+        |--------------------------------------------------------------------------
+        */
+        Route::apiResource('brands', BrandController::class);
+
+        /*
+        |--------------------------------------------------------------------------
+        | Stores
+        |--------------------------------------------------------------------------
+        */
+        Route::apiResource('admin-stores', StoreController::class);
+
+        /*
+        |--------------------------------------------------------------------------
+        | Products
+        |--------------------------------------------------------------------------
+        */
+        Route::post('/products', [ProductController::class, 'store']);
+
+        /*
+        |--------------------------------------------------------------------------
+        | Vendor Orders
+        |--------------------------------------------------------------------------
+        */
+        Route::get('/vendors/orders', [VendorOrderController::class, 'index']);
+        Route::get('/vendors/orders/{id}', [VendorOrderController::class, 'show']);
+        Route::put('/vendors/orders/{id}/status', [VendorOrderController::class, 'updateStatus']);
+
+        /*
+        |--------------------------------------------------------------------------
+        | Attributes
+        |--------------------------------------------------------------------------
+        */
+        Route::get('/attributes', [AdminHookController::class, 'getAttributes']);
+        Route::post('/attributes', [AdminHookController::class, 'storeAttribut']);
+
+        Route::get('/attribute-sets', [AdminHookController::class, 'getAttributSet']);
+        Route::post('/attribute-sets', [AdminHookController::class, 'storeAttributSet']);
+
+        /*
+        |--------------------------------------------------------------------------
+        | Categories
+        |--------------------------------------------------------------------------
+        */
+        Route::post('/categories', [AdminHookController::class, 'storeCategory']);
+    });
