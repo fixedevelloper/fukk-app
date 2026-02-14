@@ -129,24 +129,7 @@ class HookController extends Controller
         return ImageResource::collection($images);
     }
 
-    public function storeImage(Request $request)
-    {
-        $request->validate([
-            'file' => 'required|image|max:5120', // max 5MB
-            'name' => 'required|string|max:255',
-            'alt'  => 'nullable|string|max:255',
-        ]);
 
-        $image = Image::create([
-            'name' => $request->name,
-            'alt'  => $request->alt,
-            'src'  => $request->alt,
-        ]);
-
-        $image->addMediaFromRequest('file')->toMediaCollection('default');
-
-        return response()->json(['data' => new ImageResource($image)], 201);
-    }
     public function index(Request $request)
     {
         $sliders = Slider::with('image')

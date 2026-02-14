@@ -84,10 +84,12 @@ Route::middleware('auth:sanctum')
         Route::get('/attribute-sets', [AdminHookController::class, 'getAttributSet']);
         Route::post('/attribute-sets', [AdminHookController::class, 'storeAttributSet']);
 
-        /*
-        |--------------------------------------------------------------------------
-        | Categories
-        |--------------------------------------------------------------------------
-        */
+
         Route::post('/categories', [AdminHookController::class, 'storeCategory']);
+       /*
+             |--------------------------------------------------------------------------
+             | Images
+             |--------------------------------------------------------------------------
+             */
+        Route::post('/images', [AdminHookController::class, 'storeImage']);
     });

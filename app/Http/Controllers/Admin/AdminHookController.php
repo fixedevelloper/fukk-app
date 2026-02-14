@@ -4,9 +4,11 @@
 namespace App\Http\Controllers\Admin;
 
 
+use App\Http\Resources\ImageResource;
 use App\Http\Resources\ProductAttributeResource;
 use App\Http\Resources\ProductAttributeSetResource;
 use App\Models\Category;
+use App\Models\Image;
 use App\Models\ProductAttribute;
 use App\Models\ProductAttributeSet;
 use Illuminate\Http\Request;
@@ -76,5 +78,23 @@ class AdminHookController extends Controller
         $data['slug'] = Str::slug($data['title']);
 
         return ProductAttributeSet::create($data);
+    }
+    public function storeImage(Request $request)
+    {
+        $request->validate([
+            'file' => 'required|image|max:5120', // max 5MB
+            'name' => 'required|string|max:255',
+            'alt'  => 'nullable|string|max:255',
+        ]);
+
+        $image = Image::create([
+            'name' => $request->name,
+            'alt'  => $request->alt,
+            'src'  => $request->alt,
+        ]);
+
+        $image->addMediaFromRequest('file')->toMediaCollection('default');
+
+        return response()->json(['data' => new ImageResource($image)], 201);
     }
 }
