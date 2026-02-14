@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Admin\CategoryController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Admin\AdminHookController;
 use App\Http\Controllers\Admin\SliderController;
@@ -17,7 +18,7 @@ use App\Http\Controllers\Admin\StoreController;
 */
 
 Route::middleware('auth:sanctum')
-   // ->prefix('admin')
+    // ->prefix('admin')
     ->group(function () {
 
         /*
@@ -62,8 +63,8 @@ Route::middleware('auth:sanctum')
         | Products
         |--------------------------------------------------------------------------
         */
-        Route::post('/products', [ProductController::class, 'store']);
-
+       // Route::post('/products', [ProductController::class, 'store']);
+        Route::apiResource('admin-products', ProductController::class);
         /*
         |--------------------------------------------------------------------------
         | Vendor Orders
@@ -84,12 +85,17 @@ Route::middleware('auth:sanctum')
         Route::get('/attribute-sets', [AdminHookController::class, 'getAttributSet']);
         Route::post('/attribute-sets', [AdminHookController::class, 'storeAttributSet']);
 
-
-        Route::post('/categories', [AdminHookController::class, 'storeCategory']);
+        /*
+         |--------------------------------------------------------------------------
+         | Categories
+         |--------------------------------------------------------------------------
+        */
+        Route::apiResource('admin-categories', CategoryController::class);
+        Route::get('admin-categories-parents', [CategoryController::class, 'categorieParent']);
        /*
-             |--------------------------------------------------------------------------
-             | Images
-             |--------------------------------------------------------------------------
-             */
+       |--------------------------------------------------------------------------
+       | Images
+       |--------------------------------------------------------------------------
+      */
         Route::post('/images', [AdminHookController::class, 'storeImage']);
     });

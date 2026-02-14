@@ -15,6 +15,7 @@ class ImageResource extends JsonResource
             'name' => $this->name,
             'src'  => $this->getFirstMediaUrl('default'),
             'thumb'=> $this->getFirstMediaUrl('default', 'thumb'),
+            'medium'=> $this->getFirstMediaUrl('default', 'medium'),
             'alt'  => $this->alt,
         ];
     }

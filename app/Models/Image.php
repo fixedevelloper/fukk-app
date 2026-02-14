@@ -37,6 +37,7 @@ class Image extends Model implements HasMedia
 
         $this->addMediaConversion('medium')
             ->width(800)
+            ->height(493)
             ->format('webp')
             ->quality(85)
             ->nonQueued();

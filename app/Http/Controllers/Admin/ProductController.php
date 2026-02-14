@@ -24,6 +24,7 @@ class ProductController extends Controller
      */
     public function index(Request $request)
     {
+        logger('cccc');
         $user = $request->user();
         $store = Store::where('vendor_id', $user->id)->firstOrFail();
         if (!$store) {
@@ -65,7 +66,7 @@ class ProductController extends Controller
         }
 
         // 🔹 Pagination
-        $perPage = $request->get('per_page', 12);
+        $perPage = $request->get('limit', 12);
         $products = $query->paginate($perPage);
 
         return ProductResource::collection($products);

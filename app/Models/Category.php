@@ -17,6 +17,7 @@ class Category extends Model
         'status',
         'is_featured',
         'icon',
+        'image_id'
     ];
 
     public function scopePublished($query)
