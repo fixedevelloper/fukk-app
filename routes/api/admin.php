@@ -1,6 +1,9 @@
 <?php
 
 use App\Http\Controllers\Admin\CategoryController;
+use App\Http\Controllers\Admin\CityController;
+use App\Http\Controllers\Admin\ShippingMethodController;
+use App\Http\Controllers\Admin\ZoneController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Admin\AdminHookController;
 use App\Http\Controllers\Admin\SliderController;
@@ -98,4 +101,12 @@ Route::middleware('auth:sanctum')
        |--------------------------------------------------------------------------
       */
         Route::post('/images', [AdminHookController::class, 'storeImage']);
+
+        Route::apiResource('shipping-methods', ShippingMethodController::class);
+
+        Route::apiResource('zones', ZoneController::class);
+        Route::apiResource('cities', CityController::class);
+        Route::get('cities/zones/{id}', [CityController::class, 'zoneByCityId']);
+        Route::get('shipping-methods/byCity/{id}', [ShippingMethodController::class, 'shippinMethodsByCityId']);
+
     });

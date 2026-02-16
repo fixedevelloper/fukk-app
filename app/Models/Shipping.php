@@ -11,15 +11,4 @@ class Shipping extends Model
         'country',
     ];
 
-    protected static function booted(): void
-    {
-        static::deleted(function (Shipping $shipping) {
-            $shipping->rules()->each(fn (ShippingRule $rule) => $rule->delete());
-        });
-    }
-
-    public function rules(): HasMany
-    {
-        return $this->hasMany(ShippingRule::class, 'shipping_id');
-    }
 }

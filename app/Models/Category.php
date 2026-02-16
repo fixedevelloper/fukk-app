@@ -38,8 +38,7 @@ class Category extends Model
                 'product_category',
                 'category_id',
                 'product_id'
-            )
-            ->where('is_variation', 0);
+            );
     }
 
     public function parent()

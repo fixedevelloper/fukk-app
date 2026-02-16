@@ -105,13 +105,13 @@ class ProductController extends Controller
     public function producttabs(Request $request)
     {
         // ================= FEATURED =================
-        $featured = Product::with(['featuredImage', 'brand', 'categories', 'labels', 'collections'])
+        $featured = Product::with(['featuredImage', 'brand', 'categories', 'labels', 'collections','store'])
             ->where('is_featured', 1)
             ->take(12)
             ->get();
 
         // ================= BEST SELLER =================
-        $bestSeller = Product::with(['featuredImage', 'brand', 'categories', 'labels', 'collections'])
+        $bestSeller = Product::with(['featuredImage', 'brand', 'categories', 'labels', 'collections','store'])
             ->select('products.*')
             ->join('order_product', 'products.id', '=', 'order_product.product_id')
             ->groupBy('products.id')
@@ -120,7 +120,7 @@ class ProductController extends Controller
             ->get();
 
         // ================= MOST VIEWED =================
-        $mostViewed = Product::with(['featuredImage', 'brand', 'categories', 'labels', 'collections'])
+        $mostViewed = Product::with(['featuredImage', 'brand', 'categories', 'labels', 'collections','store'])
             ->orderByDesc('views')
             ->take(12)
             ->get();
@@ -141,8 +141,11 @@ class ProductController extends Controller
             ]
         ]);
     }
+
     /**
      * Retourne les produits les plus vendus
+     * @param Request $request
+     * @return AnonymousResourceCollection
      */
     public function bestProducts(Request $request)
     {

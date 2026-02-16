@@ -12,10 +12,8 @@ class Order extends Model
     protected $fillable = [
         'status',
         'user_id',
-        'amount',
+        'total_amount',
         'tax_amount',
-        'shipping_method',
-        'shipping_option',
         'shipping_amount',
         'description',
         'coupon_code',
@@ -45,10 +43,6 @@ class Order extends Model
             $order->products()->delete();
             $order->address()->delete();
             $order->invoice()->each(fn (Invoice $item) => $item->delete());
-
-            if (is_plugin_active('payment')) {
-                $order->payment()->delete();
-            }
         });
 
        // static::creating(fn (Order $order) => $order->code = static::generateUniqueCode());
@@ -62,27 +56,6 @@ class Order extends Model
     public function storeOrders() {
         return $this->hasMany(StoreOrder::class);
     }
-    protected function userName()
-    {
-        return ProductAttribute::get(fn () => $this->user->name);
-    }
-
-    protected function fullAddress()
-    {
-        return ProductAttribute::get(fn () => $this->shippingAddress->full_address);
-    }
-
-    protected function shippingMethodName()
-    {
-        return ProductAttribute::get(
-            fn () => OrderHelper::getShippingMethod(
-                $this->attributes['shipping_method'],
-                $this->attributes['shipping_option']
-            )
-        );
-    }
-
-
 
     public function shippingAddress()
     {
@@ -95,7 +68,6 @@ class Order extends Model
     {
         return $this
             ->hasOne(OrderAddress::class, 'order_id')
-            ->where('type', OrderAddressTypeEnum::BILLING)
             ->withDefault();
     }
 
@@ -140,123 +112,17 @@ class Order extends Model
         return $this->hasOne(OrderTaxInformation::class, 'order_id');
     }
 
-    public function canBeCanceled(): bool
-    {
-        if ($this->status == OrderStatusEnum::CANCELED) {
-            return false;
-        }
 
-        if ($this->shipment && $this->shipment->id) {
-            $pendingShippingStatuses = [
-                ShippingStatusEnum::ARRANGE_SHIPMENT,
-                ShippingStatusEnum::PENDING,
-                ShippingStatusEnum::NOT_APPROVED,
-            ];
-
-            return in_array($this->shipment->status, $pendingShippingStatuses);
-        }
-
-        return $this->status == OrderStatusEnum::PENDING;
-    }
-
-    public function canBeCanceledByAdmin(): bool
-    {
-        if ($this->status == OrderStatusEnum::CANCELED) {
-            return false;
-        }
-
-        if ($this->shipment && $this->shipment->id) {
-            $pendingShippingStatuses = [
-                ShippingStatusEnum::APPROVED,
-                ShippingStatusEnum::ARRANGE_SHIPMENT,
-                ShippingStatusEnum::PENDING,
-                ShippingStatusEnum::NOT_APPROVED,
-                ShippingStatusEnum::READY_TO_BE_SHIPPED_OUT,
-            ];
-
-            return in_array($this->shipment->status, $pendingShippingStatuses);
-        }
-
-        return in_array($this->status, [OrderStatusEnum::PENDING, OrderStatusEnum::PROCESSING]);
-    }
 
     public function getIsFreeShippingAttribute(): bool
     {
         return $this->shipping_amount == 0 && $this->discount_amount == 0 && $this->coupon_code;
     }
 
-    public function getAmountFormatAttribute(): string
-    {
-        return format_price($this->amount);
-    }
-
-    public function getDiscountAmountFormatAttribute(): string
-    {
-        return format_price($this->shipping_amount);
-    }
-
-    public function isInvoiceAvailable(): bool
-    {
-        return $this->invoice()->exists()
-            && (! EcommerceHelper::disableOrderInvoiceUntilOrderConfirmed() || $this->is_confirmed)
-            && $this->status != OrderStatusEnum::CANCELED;
-    }
-
-    public function getProductsWeightAttribute(): float|int
-    {
-        $weight = 0;
-
-        foreach ($this->products as $product) {
-            if ($product && $product->weight) {
-                $weight += $product->weight * $product->qty;
-            }
-        }
-
-        return EcommerceHelper::validateOrderWeight($weight);
-    }
 
     public function returnRequest()
     {
         return $this->hasOne(OrderReturn::class, 'order_id')->withDefault();
-    }
-
-    public function canBeReturned()
-    {
-        if (! EcommerceHelper::isOrderReturnEnabled()) {
-            return false;
-        }
-
-        if ($this->status != OrderStatusEnum::COMPLETED || ! $this->completed_at) {
-            return false;
-        }
-
-        $overReturnDate = Carbon::now()->subDays(EcommerceHelper::getReturnableDays())->gt($this->completed_at);
-
-        if ($overReturnDate) {
-            return false;
-        }
-
-        if (EcommerceHelper::isEnabledSupportDigitalProducts()) {
-            if ($this->products->where('times_downloaded')->count()) {
-                return false;
-            }
-        }
-
-        return ! $this->returnRequest()->exists();
-    }
-
-    public static function generateUniqueCode()
-    {
-      /*  $nextInsertId = static::query()->max(
-            'id'
-        ) + 1;
-
-        do {
-            $code = 5;
-            $nextInsertId++;
-        } while (static::query()->where('code', $code)->exists());*/
-
-        return '';
     }
 
     public function digitalProducts()
@@ -264,81 +130,5 @@ class Order extends Model
         return $this->products->filter(fn ($item) => $item->isTypeDigital());
     }
 
-    public static function countRevenueByDateRange(CarbonInterface $startDate, CarbonInterface $endDate): float
-    {
-        return self::query()
-            ->join('payments', 'payments.id', '=', 'ec_orders.payment_id')
-            ->whereDate('payments.created_at', '>=', $startDate)
-            ->whereDate('payments.created_at', '<=', $endDate)
-            ->where('payments.status', PaymentStatusEnum::COMPLETED)
-            ->sum(DB::raw('COALESCE(payments.amount, 0) - COALESCE(payments.refunded_amount, 0)'));
-    }
-
-    public static function getRevenueData(
-        CarbonInterface $startDate,
-        CarbonInterface $endDate,
-        $select = []
-    ): Collection {
-        if (empty($select)) {
-            $select = [
-                DB::raw('DATE(payments.created_at) AS date'),
-                DB::raw('SUM(COALESCE(payments.amount, 0) - COALESCE(payments.refunded_amount, 0)) as revenue'),
-            ];
-        }
-
-        return self::query()
-            ->join('payments', 'payments.id', '=', 'ec_orders.payment_id')
-            ->whereDate('payments.created_at', '>=', $startDate)
-            ->whereDate('payments.created_at', '<=', $endDate)
-            ->where('payments.status', PaymentStatusEnum::COMPLETED)
-            ->groupBy('date')
-            ->select($select)
-            ->get();
-    }
-
-    protected function cancellationReasonMessage(): ProductAttribute
-    {
-        return ProductAttribute::get(function () {
-            $reason = OrderCancellationReasonEnum::getLabel($this->cancellation_reason);
-
-            if ($this->cancellation_reason_description) {
-                return sprintf('%s (%s)', $reason, $this->cancellation_reason_description);
-            }
-
-            return $reason;
-        });
-    }
-
-    public function getOrderProducts()
-    {
-        $productsIds = $this->products->pluck('product_id')->all();
-
-        if (empty($productsIds)) {
-            return collect();
-        }
-
-        return get_products([
-            'condition' => [
-                ['ec_products.id', 'IN', $productsIds],
-            ],
-            'select' => [
-                'products.id',
-                'products.images',
-                'products.name',
-                'products.price',
-                'ec_products.sale_price',
-                'ec_products.sale_type',
-                'ec_products.start_date',
-                'ec_products.end_date',
-                'ec_products.sku',
-                'ec_products.order',
-                'ec_products.created_at',
-                'ec_products.is_variation',
-            ],
-            'with' => [
-                'variationProductAttributes',
-            ],
-        ]);
-    }
 
 }

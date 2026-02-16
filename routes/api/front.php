@@ -1,5 +1,7 @@
 <?php
 
+use App\Http\Controllers\Admin\ShippingMethodController;
+use App\Http\Controllers\Admin\ZoneController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\Front\HookController;
@@ -72,3 +74,8 @@ Route::get('/categories', [HookController::class, 'categories']);
 Route::get('/categories/menus', [HookController::class, 'categoriesMenu']);
 Route::get('/collections', [HookController::class, 'productCollections']);
 Route::get('/images', [HookController::class, 'images']);
+Route::get('/zones', [HookController::class, 'zones']);
+Route::get('/app-cities', [HookController::class, 'cities']);
+Route::get('/shipping-price', [HookController::class, 'calculateByZone']);
+Route::post('/shipping-methods/by-city', [ShippingMethodController::class, 'getByCity']);
+Route::get('/zones/by-city', [ZoneController::class, 'getByCity']);

@@ -19,7 +19,14 @@ return new class extends Migration
 
             $table->timestamps();
         });
-
+        Schema::create('zones', function (Blueprint $table) {
+            $table->id();
+            $table->string('name')->nullable();
+            $table->decimal('latitude', 10, 7)->nullable();
+            $table->decimal('longitude', 10, 7)->nullable();
+            $table->foreignId('city_id')->nullable()->constrained();
+            $table->timestamps();
+        });
         Schema::create('images', function (Blueprint $table) {
             $table->id();
             $table->string('name');
@@ -203,22 +210,32 @@ return new class extends Migration
             $table->timestamps();
         });
 
-        Schema::create('shipping', function (Blueprint $table) {
+        Schema::create('shipping_methods', function (Blueprint $table) {
             $table->id();
-            $table->string('title')->nullable();
-            $table->string('country', 120)->nullable();
+
+            $table->foreignId('city_id')->constrained()->cascadeOnDelete();
+
+            $table->string('name'); // pickup, home_delivery, expedition
+            $table->string('title');
+            $table->text('description')->nullable();
+
+            $table->enum('type', ['pickup', 'distance']);
+
+            $table->boolean('is_free')->default(false);
+
+            $table->decimal('base_price', 10, 2)->default(0);
+            $table->decimal('price_per_km', 10, 2)->nullable();
+
+            $table->boolean('active')->default(true);
+
             $table->timestamps();
         });
-
         Schema::create('orders', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id');
-            $table->string('shipping_option', 60)->nullable();
-            $table->string('shipping_method', 60)->default('default');
             $table->string('status', 120)->default('pending');
             $table->string('payment_status', 60)->default('pending');
-            $table->decimal('amount', 15, 2)->default(0);
-            $table->foreignId('currency_id')->nullable();
+            $table->decimal('total_amount', 15, 2)->default(0);
             $table->decimal('tax_amount')->nullable();
             $table->decimal('shipping_amount')->nullable();
             $table->text('description')->nullable();
@@ -229,7 +246,9 @@ return new class extends Migration
             $table->string('discount_description')->nullable();
             $table->boolean('is_finished')->default(0)->nullable();
             $table->string('token', 120)->nullable();
-            $table->foreignId('payment_id')->nullable();
+            $table->string('payment_method', 60)->nullable();
+            $table->foreignId('shipping_method_id')->nullable();
+
             $table->timestamps();
         });
 
