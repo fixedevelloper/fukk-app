@@ -18,6 +18,8 @@ use App\Http\Controllers\Admin\VendorDashboardController;
 Route::post('register', [AuthController::class, 'register']);
 Route::post('login', [AuthController::class, 'login']);
 Route::post('/vendor/register-with-store', [VendorDashboardController::class, 'registerWithStore']);
+Route::post('/reset-password', [AuthController::class, 'resetPassword']);
+Route::post('/forget-password', [AuthController::class, 'forgetPassword']);
 
 /*
 |--------------------------------------------------------------------------
@@ -72,6 +74,7 @@ Route::get('/app-brands', [HookController::class, 'brands']);
 Route::get('/mega-menu-categories', [HookController::class, 'categorieMegaMenu']);
 Route::get('/categories', [HookController::class, 'categories']);
 Route::get('/categories/menus', [HookController::class, 'categoriesMenu']);
+Route::get('/categories/banners', [HookController::class, 'categorieBanners']);
 Route::get('/collections', [HookController::class, 'productCollections']);
 Route::get('/images', [HookController::class, 'images']);
 Route::get('/zones', [HookController::class, 'zones']);

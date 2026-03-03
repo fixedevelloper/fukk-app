@@ -125,6 +125,17 @@ class Product extends Model
         );
     }
 
+// Produit configurable
+    public function variations()
+    {
+        return $this->hasMany(ProductVariation::class, 'configurable_product_id');
+    }
+
+// Si c'est une variation simple
+    public function parentProduct()
+    {
+        return $this->belongsTo(Product::class, 'product_id');
+    }
 
     /* ===================== BUSINESS LOGIC ===================== */
 

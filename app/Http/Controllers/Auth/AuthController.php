@@ -6,11 +6,16 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Helpers\Helpers;
 use App\Models\User;
+use App\Notifications\ResetPasswordNotification;
+use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Password;
+use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
 class AuthController extends Controller
@@ -124,6 +129,82 @@ class AuthController extends Controller
     public function profile(Request $request)
     {
         return Helpers::success($request->user());
+    }
+    public function forgetPassword(Request $request)
+    {
+        $request->validate([
+            'email' => 'required|email',
+        ]);
+
+        // Cherche l'utilisateur
+        $user = User::where('email', $request->email)->first();
+
+        if (!$user) {
+            // Toujours renvoyer succès pour éviter de révéler si l'email existe
+            return Helpers::success( 'Si cet email existe, un lien de réinitialisation a été envoyé.');
+        }
+
+        // Générer un token aléatoire
+        $token = Str::random(64);
+
+        // Stocker le token dans la table password_resets
+        DB::table('password_reset_tokens')->updateOrInsert(
+            ['email' => $user->email],
+            [
+                'token' => bcrypt($token),
+                'created_at' => now()
+            ]
+        );
+
+        // Envoyer la notification
+        $user->notify(new ResetPasswordNotification($token, $user->email));
+
+        return response()->json([
+            'message' => 'Si cet email existe, un lien de réinitialisation a été envoyé.'
+        ]);
+    }
+    public function resetPassword(Request $request)
+    {
+        $request->validate([
+            'token' => 'required',
+            'email' => 'required|email',
+            'password' => 'required|min:6|confirmed',
+        ]);
+
+        // Cherche l'entrée token dans la table password_resets
+        $record = DB::table('password_reset_tokens')
+            ->where('email', $request->email)
+            ->first();
+
+        if (!$record) {
+            return Helpers::error('Token invalide ou email inconnu.');
+        }
+
+        // Vérifie la correspondance du token
+        if (!Hash::check($request->token, $record->token)) {
+            return Helpers::error('Token invalide.');
+        }
+
+        // Vérifie expiration (60 minutes)
+        if (Carbon::parse($record->created_at)->addMinutes(60)->isPast()) {
+            return Helpers::error('Token expiré.');
+        }
+
+        // Récupère l’utilisateur
+        $user = User::where('email', $request->email)->first();
+        if (!$user) {
+            return Helpers::error('Utilisateur introuvable.');
+        }
+
+        // Met à jour le mot de passe
+        $user->password = Hash::make($request->password);
+        $user->remember_token = Str::random(60);
+        $user->save();
+
+        // Supprime l’entrée token après usage
+        DB::table('password_reset_tokens')->where('email', $request->email)->delete();
+
+        return Helpers::success('Mot de passe réinitialisé avec succès.');
     }
 }
 

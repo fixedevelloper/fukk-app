@@ -63,6 +63,16 @@ class HookController extends Controller
         return CategoryResource::collection($categories);
     }
 
+    public function categorieBanners(Request $request)
+    {
+        // On récupère les catégories avec image et enfants
+        $categories = Category::with(['image', 'children'])
+            ->whereIn('id', [1, 6, 5, 9])
+            ->get(); // ⚡ Important : il faut exécuter la requête
+
+        // On retourne la collection avec Resource
+        return CategoryResource::collection($categories);
+    }
     public function categorieMegaMenu(Request $request)
     {
         $categories = Category::with([
@@ -76,8 +86,6 @@ class HookController extends Controller
 
         return CategoryResource::collection($categories);
     }
-
-
 
     public function categoriesMenu(Request $request)
     {

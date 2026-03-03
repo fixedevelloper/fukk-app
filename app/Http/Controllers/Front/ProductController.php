@@ -77,6 +77,7 @@ class ProductController extends Controller
             'labels',
             'collections',
             'store',
+            'variations.items.attribute'
         ])->where(['slug'=>$slug])->firstOrFail();
 
         logger($product);

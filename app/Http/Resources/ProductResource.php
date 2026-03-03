@@ -66,6 +66,32 @@ class ProductResource extends JsonResource
             'related_products' => ProductResource::collection(
                 $this->whenLoaded('relatedProducts')
             ),
+            'variations' => $this->whenLoaded('variations', function () {
+                return $this->variations->map(function ($variation) {
+                    return [
+                        'id' => $variation->id,
+                        'price' => (float) $variation->price,
+                        'stock' => $variation->stock,
+                        'sku' => $variation->sku,
+                        'is_default' => (bool) $variation->is_default,
+
+                        'attributes' => $variation->items->map(function ($value) {
+                            return [
+                                'attribute_id' => $value->attribute->id,
+                                'attribute_name' => $value->attribute->title,
+                                'value_id' => $value->id,
+                                'value_name' => $value->title,
+                            ];
+                        }),
+                    ];
+                });
+            }),
+            'has_variations' => $this->variations->isNotEmpty(),
+            'default_variation_id' => optional(
+                $this->variations->firstWhere('is_default', 1)
+            )->id,
+            'min_price' => $this->variations->min('final_price'),
+            'max_price' => $this->variations->max('final_price'),
 
             /* ===================== META ===================== */
 

@@ -129,7 +129,6 @@ return new class extends Migration
         Schema::create('product_tag', function (Blueprint $table) {
             $table->foreignId('product_id')->index();
             $table->foreignId('tag_id')->index();
-
             $table->primary(['product_id', 'tag_id']);
         });
         Schema::create('product_image', function (Blueprint $table) {
@@ -181,13 +180,17 @@ return new class extends Migration
             $table->foreignId('product_id')->nullable();
             $table->foreignId('configurable_product_id');
             $table->tinyInteger('is_default')->default(0);
+            $table->decimal('price', 12, 2)->nullable();
+            $table->decimal('sale_price', 12, 2)->nullable();
+            $table->integer('stock')->default(0);
+            $table->unique(['configurable_product_id', 'product_id']);
+            $table->timestamps();
         });
 
         Schema::create('product_variation_items', function (Blueprint $table) {
             $table->id();
             $table->foreignId('attribute_id');
             $table->foreignId('variation_id');
-
             $table->unique(['attribute_id', 'variation_id']);
         });
 
