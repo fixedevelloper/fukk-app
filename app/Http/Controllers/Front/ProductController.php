@@ -105,28 +105,27 @@ class ProductController extends Controller
     }
     public function producttabs(Request $request)
     {
-        // ================= FEATURED =================
-        $featured = Product::with(['featuredImage', 'brand', 'categories', 'labels', 'collections','store'])
+        // FEATURED
+        $featured = Product::with(['featuredImage','brand','categories','labels','collections','store'])
             ->where('is_featured', 1)
-            ->take(12)
+            ->limit(12)
             ->get();
 
-        // ================= BEST SELLER =================
-        $bestSeller = Product::with(['featuredImage', 'brand', 'categories', 'labels', 'collections','store'])
-            ->select('products.*')
+        // BEST SELLER
+        $bestSeller = Product::with(['featuredImage','brand','categories','labels','collections','store'])
+            ->select('products.*', DB::raw('SUM(order_product.qty) as total_sold'))
             ->join('order_product', 'products.id', '=', 'order_product.product_id')
             ->groupBy('products.id')
-            ->orderByRaw('SUM(order_product.qty) DESC')
-            ->take(12)
+            ->orderByDesc('total_sold')
+            ->limit(12)
             ->get();
 
-        // ================= MOST VIEWED =================
-        $mostViewed = Product::with(['featuredImage', 'brand', 'categories', 'labels', 'collections','store'])
+        // MOST VIEWED
+        $mostViewed = Product::with(['featuredImage','brand','categories','labels','collections','store'])
             ->orderByDesc('views')
-            ->take(12)
+            ->limit(12)
             ->get();
 
-        // ================= RESPONSE =================
         return response()->json([
             [
                 'title' => 'En vedette',
@@ -152,12 +151,17 @@ class ProductController extends Controller
     {
         $perPage = $request->get('per_page', 12);
 
-        $products = Product::with(['featuredImage', 'brand', 'categories', 'labels', 'collections','store'])
-            ->select('products.*')
-            ->join('order_product', 'products.id', '=', 'order_product.product_id')
-            ->groupBy('products.id')
-            ->orderByRaw('SUM(order_product.qty) DESC')
-            ->take($perPage)
+        $productIds = DB::table('order_product')
+            ->select('product_id', DB::raw('SUM(qty) as total'))
+            ->groupBy('product_id')
+            ->orderByDesc('total')
+            ->limit($perPage)
+            ->pluck('product_id');
+
+        $products = Product::with([
+            'featuredImage','brand','categories','labels','collections','store'
+        ])
+            ->whereIn('id', $productIds)
             ->get();
 
         return ProductResource::collection($products);
