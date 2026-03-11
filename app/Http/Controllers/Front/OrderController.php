@@ -24,7 +24,9 @@ class OrderController extends Controller
     {
         logger($request->all());
         $user = $request->user();
+        DB::beginTransaction();
 
+        try {
         $data = $request->validate([
             'items' => 'required|array|min:1',
             'items.*.product_id' => 'required|exists:products,id',
@@ -43,9 +45,7 @@ class OrderController extends Controller
             'address.note'       => 'nullable|string',
         ]);
 
-        DB::beginTransaction();
 
-        try {
             /** 1️⃣ Commande globale */
             $order = Order::create([
                 'user_id'            => $user->id,
@@ -113,6 +113,7 @@ class OrderController extends Controller
                 'sub_total'    => $globalTotal,
             ]);
 
+            logger('icic');
             DB::commit();
 
             return response()->json([

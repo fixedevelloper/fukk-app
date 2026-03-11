@@ -207,7 +207,7 @@ class ProductController extends Controller
             'categories',
             'labels',
             'collections',
-            'store',
+            'store', 'store.logo',
             'variations.attributeValues.attribute'
         ])->findOrFail($id);
 
@@ -221,6 +221,7 @@ class ProductController extends Controller
         // 1️⃣ Validation
         $validator = Validator::make($request->all(), [
             'name' => 'required|string|max:255',
+            'type' => 'required|string|max:255',
             'slug' => 'nullable|string|max:255|unique:products,slug,' . $product->id,
             'price' => 'required|numeric|min:0',
             'sale_price' => 'nullable|numeric|min:0',
@@ -253,6 +254,7 @@ class ProductController extends Controller
         // 2️⃣ Mettre à jour les champs du produit
         $data = $request->only([
             'name',
+            'type',
             'slug',
             'short_description',
             'description',

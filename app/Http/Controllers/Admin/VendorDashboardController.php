@@ -4,6 +4,7 @@
 namespace App\Http\Controllers\Admin;
 
 
+use App\Models\Image;
 use App\Models\Store;
 use App\Models\StoreOrder;
 use App\Models\Product;
@@ -70,51 +71,84 @@ class VendorDashboardController extends Controller
     }
 
     public function registerWithStore(Request $request)
-    {
-
-        $validated = $request->validate([
-            // User
-            'first_name' => 'required|string|max:255',
-            'last_name' => 'required|string|max:255',
-            'email' => 'required|email',
-            'password' => 'required|min:6',
-
-            // Store
-            'store_name' => 'required|string|max:255',
-            'store_phone' => 'nullable|string|max:20',
-            'store_description' => 'nullable|string',
-            'logo_id' => 'nullable|exists:images,id',
-            'cover_id' => 'nullable|exists:images,id',
-        ]);
-
-        logger($validated);
-        DB::beginTransaction();
+    {   DB::beginTransaction();
 
         try {
+
+            $validated = $request->validate([
+            // User
+            'first_name' => 'required|string|max:255',
+            'last_name'  => 'required|string|max:255',
+            'email'      => 'required|email',
+            'password'   => 'required|min:6',
+
+            // Store
+            'store_name'        => 'required|string|max:255',
+            'store_phone'       => 'nullable|string|max:20',
+            'store_description' => 'nullable|string',
+            'logo'  => 'nullable|image',
+            'cover' => 'nullable|image',
+        ]);
+
 
             // 1️⃣ Create user
             $user = User::create([
                 'first_name' => $validated['first_name'],
-                'last_name' => $validated['last_name'],
-                'email' => $validated['email'],
-                'password' => Hash::make($validated['password']),
-                'role' => 'vendor',
-                'user_type' => 1,
+                'last_name'  => $validated['last_name'],
+                'email'      => $validated['email'],
+                'password'   => Hash::make($validated['password']),
+                'role'       => 'vendor',
+                'user_type'  => 1,
             ]);
 
-            // 2️⃣ Create store
+            $logoId = null;
+            $coverId = null;
+
+            // 2️⃣ Upload logo
+            if ($request->hasFile('logo')) {
+
+                $imageLogo = Image::create([
+                    'name' => '',
+                    'alt'  => '',
+                    'src'  => ''
+                ]);
+
+                $imageLogo
+                    ->addMediaFromRequest('logo')
+                    ->toMediaCollection('default');
+
+                $logoId = $imageLogo->id;
+            }
+
+            // 3️⃣ Upload cover
+            if ($request->hasFile('cover')) {
+
+                $imageCover = Image::create([
+                    'name' => '',
+                    'alt'  => '',
+                    'src'  => ''
+                ]);
+
+                $imageCover
+                    ->addMediaFromRequest('cover')
+                    ->toMediaCollection('default');
+
+                $coverId = $imageCover->id;
+            }
+
+            // 4️⃣ Create store
             $store = Store::create([
-                'vendor_id' => $user->id,
-                'name' => $validated['store_name'],
-                'phone' => $validated['store_phone'] ?? null,
+                'vendor_id'   => $user->id,
+                'name'        => $validated['store_name'],
+                'phone'       => $validated['store_phone'] ?? null,
                 'description' => $validated['store_description'] ?? null,
-                'logo' => $validated['logo_id'] ?? null,
-                'cover_image' => $validated['cover_id'] ?? null,
+                'logo'        => $logoId,
+                'cover_image' => $coverId,
             ]);
 
             DB::commit();
 
-            // 3️⃣ Create token
+            // 5️⃣ Token
             $token = $user->createToken('vendor-token')->plainTextToken;
 
             return response()->json([
@@ -126,8 +160,9 @@ class VendorDashboardController extends Controller
 
         } catch (\Exception $e) {
 
-            logger($e->getMessage());
             DB::rollBack();
+
+            logger($e->getMessage());
 
             return response()->json([
                 'success' => false,

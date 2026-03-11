@@ -7,6 +7,7 @@ namespace App\Http\Controllers\Front;
 use App\Http\Resources\BannerResource;
 use App\Http\Resources\BrandResource;
 use App\Http\Resources\BrandSelectResource;
+use App\Http\Resources\CategoryBannerResource;
 use App\Http\Resources\CategoryResource;
 use App\Http\Resources\ImageResource;
 use App\Http\Resources\ProductCollectionResource;
@@ -66,12 +67,10 @@ class HookController extends Controller
     public function categorieBanners(Request $request)
     {
         // On récupère les catégories avec image et enfants
-        $categories = Category::with(['image', 'children'])
-            ->whereIn('id', [1, 6, 5, 9])
-            ->get(); // ⚡ Important : il faut exécuter la requête
-
+        $categories = Category::with(['image'])->withCount('products')
+            ->take(20);
         // On retourne la collection avec Resource
-        return CategoryResource::collection($categories);
+        return CategoryBannerResource::collection($categories);
     }
     public function categorieMegaMenu(Request $request)
     {

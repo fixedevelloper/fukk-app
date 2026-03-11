@@ -152,7 +152,7 @@ class ProductController extends Controller
     {
         $perPage = $request->get('per_page', 12);
 
-        $products = Product::with(['featuredImage', 'brand', 'categories', 'labels', 'collections'])
+        $products = Product::with(['featuredImage', 'brand', 'categories', 'labels', 'collections','store'])
             ->select('products.*')
             ->join('order_product', 'products.id', '=', 'order_product.product_id')
             ->groupBy('products.id')
@@ -169,7 +169,7 @@ class ProductController extends Controller
     {
         $perPage = $request->get('per_page', 12);
 
-        $products = Product::with(['featuredImage', 'brand', 'categories', 'labels', 'collections'])
+        $products = Product::with(['featuredImage', 'brand', 'categories', 'labels', 'collections','store'])
             ->orderByDesc('views') // tri par nombre de vues
             ->take($perPage)
             ->get();
@@ -186,7 +186,7 @@ class ProductController extends Controller
     {
         $perPage = $request->get('per_page', 12);
 
-        $products = Product::with(['featuredImage', 'brand', 'categories', 'labels', 'collections'])
+        $products = Product::with(['featuredImage', 'brand', 'categories', 'labels', 'collections','store'])
             ->select('products.*', DB::raw('COALESCE(SUM(order_product.qty), 0) + products.views as popularity_score'))
             ->leftJoin('order_product', 'products.id', '=', 'order_product.product_id')
             ->groupBy('products.id')
@@ -252,7 +252,7 @@ class ProductController extends Controller
     public function featuredProducts(Request $request)
     {
 
-        $products = Product::with(['featuredImage'])
+        $products = Product::with(['featuredImage','store'])
        /*     ->select('products.*', DB::raw('COALESCE(SUM(order_product.qty), 0) + products.views as popularity_score'))
             ->leftJoin('order_product', 'products.id', '=', 'order_product.product_id')
             ->groupBy('products.id')
