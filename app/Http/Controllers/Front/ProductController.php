@@ -112,12 +112,18 @@ class ProductController extends Controller
             ->get();
 
         // BEST SELLER
-        $bestSeller = Product::with(['featuredImage','brand','categories','labels','collections','store'])
-            ->select('products.*', DB::raw('SUM(order_product.qty) as total_sold'))
-            ->join('order_product', 'products.id', '=', 'order_product.product_id')
-            ->groupBy('products.id')
+
+        $bestSellerIds = DB::table('order_product')
+            ->select('product_id', DB::raw('SUM(qty) as total_sold'))
+            ->groupBy('product_id')
             ->orderByDesc('total_sold')
             ->limit(12)
+            ->pluck('product_id');
+
+        $bestSeller = Product::with([
+            'featuredImage','brand','categories','labels','collections','store'
+        ])
+            ->whereIn('id', $bestSellerIds)
             ->get();
 
         // MOST VIEWED
