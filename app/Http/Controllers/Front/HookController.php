@@ -66,10 +66,11 @@ class HookController extends Controller
 
     public function categorieBanners(Request $request)
     {
-        // On récupère les catégories avec image et enfants
-        $categories = Category::with(['image'])->withCount('products')
-            ->take(20);
-        // On retourne la collection avec Resource
+        $categories = Category::with(['image'])
+            ->withCount('products')
+            ->take(20)
+            ->get();
+
         return CategoryBannerResource::collection($categories);
     }
     public function categorieMegaMenu(Request $request)
